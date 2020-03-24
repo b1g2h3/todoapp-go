@@ -16,13 +16,13 @@ import (
 
 // List struct (Model)
 type List struct {
-	ID   int    `json:"id"`
+	ID   int    `json:"ID"`
 	Name string `json:"Name"`
 }
 
 // Task struct (Model)
 type Task struct {
-	ID     int    `json:"id"`
+	ID     int    `json:"ID"`
 	Name   string `json:"Name"`
 	ListID int    `json:"ListID"`
 }
