@@ -142,13 +142,6 @@
         }
     }
 
-    function selectAllUpdates(){
-      const btnsUpdate = document.querySelectorAll(".task-update")
-        for (const btnUpdate of btnsUpdate) {
-          btnUpdate.addEventListener('click', updateTask.bind(this, btnUpdate.id), false)
-        }
-    }
-
     function selectAllDeleted(){
       const btnsDeleted = document.querySelectorAll(".task-delete")
         for (const btnDel of btnsDeleted) {
@@ -156,8 +149,39 @@
         }
     }
 
-    function updateTask(id) {
-      console.log(id)
+    function updateTask(task) {
+      document.getElementById('NewTask').value = task["Name"];
+      let btn = document.getElementById('addTask')
+      btn.innerHTML = "Upravit Task"
+      btn.removeEventListener("click", addTask);
+      btn.addEventListener('click', sendDataUpdate.bind(this, task), false)
+    }
+    
+    function sendDataUpdate(task) {
+      firebase.auth().onAuthStateChanged(function(user) {
+         if (user) { 
+          task.Name = document.getElementById('NewTask').value;
+          if(Name){
+          let url = `'http://localhost:8090/lists/${task.ListID}/lists/${task.ID}`
+          fetch( url, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(task),
+          })
+          .then(response => {
+            return response.json();
+          })
+          .then((data) => {
+            console.log(data)
+          })
+          .catch((error) => {
+            console.error('Error:', error);
+          });
+          }
+        }
+       })
     }
 
     function deleteTask(id) {
@@ -273,7 +297,8 @@
             input.setAttribute("id", "NewTask")
             input.setAttribute("placeholder", "Přidat task")
             let btnCreate = document.createElement("button")
-            btnCreate.setAttribute("class", "addTask pl-2 font-bold")
+            btnCreate.setAttribute("id", "addTask")
+            btnCreate.setAttribute("class", "pl-2 font-bold")
             btnCreate.innerHTML = 'Přidat task'
             btnCreate.addEventListener('click', addTask.bind(this, data[0]["ListID"]), false)
             tasks.appendChild(input);
@@ -287,6 +312,7 @@
               btnUpdate.setAttribute("id", data[i]["ListID"]+','+data[i]["ID"])
               btnUpdate.setAttribute("class", "task-update text-green-400 font-bold pl-2")
               btnUpdate.innerHTML = "Upravit"
+              btnUpdate.addEventListener('click', updateTask.bind(this, data[i]), false)
               let btnDeleted = document.createElement("button")
               btnDeleted.setAttribute("id", data[i]["ListID"]+','+data[i]["ID"])
               btnDeleted.setAttribute("class", "task-delete text-red-400 font-bold pl-2")
@@ -295,7 +321,7 @@
               task.appendChild(btnDeleted)
               tasks.appendChild(task);
             } 
-            selectAllUpdates()
+            
             selectAllDeleted()
           })
           .catch((error) => {
