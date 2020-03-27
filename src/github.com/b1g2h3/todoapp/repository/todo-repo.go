@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"math/rand"
+	"strconv"
 
 	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go"
@@ -18,8 +19,8 @@ type TodoRepository interface {
 	AddList(list *entity.List) (*entity.List, error)
 	GetTasks(ListID string) ([]entity.Task, error)
 	GetTask(ListID, TaskID string) ([]entity.Task, error)
-	AddTask(ListID string, task *entity.Task) (*entity.Task, error)
-	UpdateTask(ListID, TaskID string, task *entity.Task) (*entity.Task, error)
+	AddTask(task *entity.Task) (*entity.Task, error)
+	UpdateTask(task *entity.Task) (*entity.Task, error)
 	DestroyTask(Name string)
 }
 
@@ -60,7 +61,7 @@ func (*repo) GetLists(list *entity.List) ([]entity.List, error) {
 			log.Fatalf("Failed to iterate: %v", err)
 		}
 		list := entity.List{
-			ID:   doc.Data()["ID"].(int64),
+			ID:   doc.Data()["ID"].(string),
 			UID:  doc.Data()["UID"].(string),
 			Name: doc.Data()["Name"].(string),
 		}
@@ -71,7 +72,7 @@ func (*repo) GetLists(list *entity.List) ([]entity.List, error) {
 
 func (*repo) AddList(list *entity.List) (*entity.List, error) {
 	ctx := context.Background()
-	list.ID = int64(rand.Intn(10000))
+	list.ID, _ = strconv.Itoa(rand.Intn(10000))
 	_, _, err := c.Collection("lists").Add(ctx, list)
 	if err != nil {
 		log.Fatalf("Failed add list: %v", err)
@@ -125,10 +126,9 @@ func (*repo) GetTask(ListID, TaskID string) ([]entity.Task, error) {
 	return tasks, nil
 }
 
-func (*repo) AddTask(ListID string, task *entity.Task) (*entity.Task, error) {
+func (*repo) AddTask(task *entity.Task) (*entity.Task, error) {
 	ctx := context.Background()
-	// list.ID = string(rand.Intn(10000)) addID
-	task.ListID = ListID
+	task.ID = strconv.Itoa(rand.Intn(10000))
 	Name := task.ID + task.ListID
 	_, err := c.Collection("task").Doc(Name).Set(ctx, task)
 	if err != nil {
@@ -137,14 +137,12 @@ func (*repo) AddTask(ListID string, task *entity.Task) (*entity.Task, error) {
 	return task, nil
 }
 
-func (*repo) UpdateTask(TaskID, ListID string, task *entity.Task) (*entity.Task, error) {
+func (*repo) UpdateTask(task *entity.Task) (*entity.Task, error) {
 	ctx := context.Background()
-	task.ID = TaskID
-	task.ListID = ListID
 	Name := task.ID + task.ListID
 	_, err := c.Collection("task").Doc(Name).Set(ctx, task)
 	if err != nil {
-		log.Fatalf("Failed adding alovelace: %v", err)
+		log.Fatalf("Failed Update Task: %v", err)
 	}
 	return task, nil
 }
@@ -153,7 +151,7 @@ func (*repo) DestroyTask(Name string) {
 	ctx := context.Background()
 	_, err := c.Collection("task").Doc(Name).Delete(ctx)
 	if err != nil {
-		log.Fatalf("Failed adding alovelace: %v", err)
+		log.Fatalf("Failed destroy Task: %v", err)
 	}
 }
 

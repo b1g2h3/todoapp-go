@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"strconv"
 	"text/template"
 
 	"github.com/b1g2h3/todoapp/entity"
@@ -108,10 +107,10 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 // Add new Task
 func createTask(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	ListID := params["ListID"]
-	var Task *entity.Task
-	_ = json.NewDecoder(r.Body).Decode(&Task)
-	newTask, err := repo.AddTask(ListID, Task)
+	var task *entity.Task
+	_ = json.NewDecoder(r.Body).Decode(&task)
+	task.ListID = params["ListID"]
+	newTask, err := repo.AddTask(task)
 	result, err := json.Marshal(newTask)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -123,12 +122,9 @@ func createTask(w http.ResponseWriter, r *http.Request) {
 
 // Update Task
 func updateTask(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	ListID := params["ListID"]
-	TaskID := params["TaskID"]
 	var task *entity.Task
 	_ = json.NewDecoder(r.Body).Decode(&task)
-	newTask, err := repo.UpdateTask(TaskID, ListID, task)
+	newTask, err := repo.UpdateTask(task)
 	result, err := json.Marshal(newTask)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -141,14 +137,10 @@ func updateTask(w http.ResponseWriter, r *http.Request) {
 // Delete Task
 func deleteTask(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	TaskID, err := strconv.Atoi(params["ListID"])
-	ListID, err := strconv.Atoi(params["TaskID"])
-	Name := strconv.Itoa(ListID) + strconv.Itoa(TaskID)
+	ListID := params["ListID"]
+	TaskID := params["TaskID"]
+	Name := ListID + TaskID
 	repo.DestroyTask(Name)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error": "Error marshalling data"}`))
-	}
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"Success": "Task was deleted"}`))
 }

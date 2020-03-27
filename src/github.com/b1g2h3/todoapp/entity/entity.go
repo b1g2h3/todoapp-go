@@ -2,7 +2,7 @@ package entity
 
 // List struct (Model)
 type List struct {
-	ID   int64  `json:"ID"`
+	ID   string `json:"ID"`
 	UID  string `json:"UID"`
 	Name string `json:"Name"`
 }
