@@ -2,20 +2,24 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 	"text/template"
 
-	"./entity"
-	rep "./repository"
+	"github.com/b1g2h3/todoapp/entity"
+	"github.com/b1g2h3/todoapp/repository"
 	"github.com/gorilla/mux"
 )
 
 var (
-	repo *rep.NewDatabaseHandler = rep.NewDatabaseHandler()
 	list *entity.List
 	tpl  *template.Template
+)
+
+var (
+	repo repository.TodoRepository = repository.NewTodoRepository()
 )
 
 func init() {
@@ -28,13 +32,21 @@ func index(w http.ResponseWriter, r *http.Request) {
 
 // Get all Lists
 func getLists(w http.ResponseWriter, r *http.Request) {
-	var list entity.List
+	w.Header().Set("Content-Type", "application/json")
+	var list *entity.List
 	_ = json.NewDecoder(r.Body).Decode(&list)
-	lists, err := repo.getLists(list)
+	fmt.Println(list.UID)
+	lists, err := repo.GetLists(list)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"error": "Error getting the lists"}`))
+		return
+	}
 	result, err := json.Marshal(lists)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(`{"error": "Error marshalling data"}`))
+		return
 	}
 	w.WriteHeader(http.StatusOK)
 	w.Write(result)
@@ -42,28 +54,29 @@ func getLists(w http.ResponseWriter, r *http.Request) {
 
 // Add new List
 func createList(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	var list entity.List
+	w.Header().Set("Content-Type", "application/json")
+	var list *entity.List
 	_ = json.NewDecoder(r.Body).Decode(&list)
-	list, err := repo.addList(list)
-	result, err := json.Marshal(list)
+	newList, err := repo.AddList(list)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error": "Error marshalling data"}`))
+		w.Write([]byte(`{"error": "Error adding list"}`))
+		return
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write(result)
+	json.NewEncoder(w).Encode(newList)
 }
 
 // Get Tasks
 func getTasks(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	ListID, err := strconv.Atoi(params["ListID"])
-	tasks, err := repo.getTasks(ListID)
+	tasks, err := repo.GetTasks(ListID)
 	result, err := json.Marshal(tasks)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(`{"error": "Error marshalling data"}`))
+		return
 	}
 	w.WriteHeader(http.StatusOK)
 	w.Write(result)
@@ -74,7 +87,7 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	ListID, err := strconv.Atoi(params["ListID"])
 	TaskID, err := strconv.Atoi(params["TaskID"])
-	task, err := repo.getTask(ListID, TaskID)
+	task, err := repo.GetTask(ListID, TaskID)
 	result, err := json.Marshal(task)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -88,9 +101,9 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 func createTask(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	ListID, err := strconv.Atoi(params["ListID"])
-	var task entity.Task
-	_ = json.NewDecoder(r.Body).Decode(&task)
-	newTask, err := repo.addTask(ListID, task)
+	var Task *entity.Task
+	_ = json.NewDecoder(r.Body).Decode(&Task)
+	newTask, err := repo.AddTask(ListID, Task)
 	result, err := json.Marshal(newTask)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -105,9 +118,9 @@ func updateTask(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	TaskID, err := strconv.Atoi(params["ListID"])
 	ListID, err := strconv.Atoi(params["TaskID"])
-	var task entity.Task
+	var task *entity.Task
 	_ = json.NewDecoder(r.Body).Decode(&task)
-	newTask, err := repo.updateTask(TaskID, ListID, task)
+	newTask, err := repo.UpdateTask(TaskID, ListID, task)
 	result, err := json.Marshal(newTask)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -123,7 +136,7 @@ func deleteTask(w http.ResponseWriter, r *http.Request) {
 	TaskID, err := strconv.Atoi(params["ListID"])
 	ListID, err := strconv.Atoi(params["TaskID"])
 	Name := strconv.Itoa(ListID) + strconv.Itoa(TaskID)
-	repo.destroyTask(Name)
+	repo.DestroyTask(Name)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(`{"error": "Error marshalling data"}`))

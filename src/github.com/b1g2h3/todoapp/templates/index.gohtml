@@ -126,8 +126,8 @@
             },
             body: JSON.stringify(data),
           })
-          .then((data) => {
-            console.log('Success:', data);
+          .then(res => {
+            console.log(res);
           })
           .catch((error) => {
             console.error('Error:', error);

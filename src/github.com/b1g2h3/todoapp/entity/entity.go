@@ -2,7 +2,7 @@ package entity
 
 // List struct (Model)
 type List struct {
-	ID   int    `json:"ID"`
+	ID   int64  `json:"ID"`
 	UID  string `json:"UID"`
 	Name string `json:"Name"`
 }
@@ -10,7 +10,7 @@ type List struct {
 // Task struct (Model)
 type Task struct {
 	ID     int    `json:"ID"`
-	UID    string `json:"UID"`
-	Name   string `json:"Name"`
 	ListID int    `json:"ListID"`
+	UID    int64  `json:"UID"`
+	Name   string `json:"Name"`
 }
