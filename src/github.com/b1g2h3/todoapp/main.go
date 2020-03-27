@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -35,7 +34,6 @@ func getLists(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var list *entity.List
 	_ = json.NewDecoder(r.Body).Decode(&list)
-	fmt.Println(list.UID)
 	lists, err := repo.GetLists(list)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -69,9 +67,15 @@ func createList(w http.ResponseWriter, r *http.Request) {
 
 // Get Tasks
 func getTasks(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
-	ListID, err := strconv.Atoi(params["ListID"])
+	ListID := params["ListID"]
 	tasks, err := repo.GetTasks(ListID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"error": "Error getting the lists"}`))
+		return
+	}
 	result, err := json.Marshal(tasks)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -85,9 +89,13 @@ func getTasks(w http.ResponseWriter, r *http.Request) {
 // Get Task
 func getTask(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	ListID, err := strconv.Atoi(params["ListID"])
-	TaskID, err := strconv.Atoi(params["TaskID"])
+	ListID := params["ListID"]
+	TaskID := params["TaskID"]
 	task, err := repo.GetTask(ListID, TaskID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"error": "Error marshalling data"}`))
+	}
 	result, err := json.Marshal(task)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -100,7 +108,7 @@ func getTask(w http.ResponseWriter, r *http.Request) {
 // Add new Task
 func createTask(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	ListID, err := strconv.Atoi(params["ListID"])
+	ListID := params["ListID"]
 	var Task *entity.Task
 	_ = json.NewDecoder(r.Body).Decode(&Task)
 	newTask, err := repo.AddTask(ListID, Task)
@@ -116,8 +124,8 @@ func createTask(w http.ResponseWriter, r *http.Request) {
 // Update Task
 func updateTask(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	TaskID, err := strconv.Atoi(params["ListID"])
-	ListID, err := strconv.Atoi(params["TaskID"])
+	ListID := params["ListID"]
+	TaskID := params["TaskID"]
 	var task *entity.Task
 	_ = json.NewDecoder(r.Body).Decode(&task)
 	newTask, err := repo.UpdateTask(TaskID, ListID, task)
@@ -161,7 +169,7 @@ func handler() {
 	r.HandleFunc("/lists/{ListID}/tasks/{TaskID}", deleteTask).Methods("DELETE")
 
 	// Start server
-	log.Fatal(http.ListenAndServe(":8080", r))
+	log.Fatal(http.ListenAndServe(":8090", r))
 }
 
 // Main function

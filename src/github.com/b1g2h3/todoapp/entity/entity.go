@@ -9,8 +9,8 @@ type List struct {
 
 // Task struct (Model)
 type Task struct {
-	ID     int    `json:"ID"`
-	ListID int    `json:"ListID"`
-	UID    int64  `json:"UID"`
+	ID     string `json:"ID"`
+	ListID string `json:"ListID"`
+	UID    string `json:"UID"`
 	Name   string `json:"Name"`
 }

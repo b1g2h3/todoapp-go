@@ -2,9 +2,9 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"math/rand"
-	"strconv"
 
 	"cloud.google.com/go/firestore"
 	firebase "firebase.google.com/go"
@@ -17,10 +17,10 @@ import (
 type TodoRepository interface {
 	GetLists(list *entity.List) ([]entity.List, error)
 	AddList(list *entity.List) (*entity.List, error)
-	GetTasks(ListID int) ([]entity.Task, error)
-	GetTask(ListID, TaskID int) ([]entity.Task, error)
-	AddTask(ListID int, task *entity.Task) (*entity.Task, error)
-	UpdateTask(ListID, TaskID int, task *entity.Task) (*entity.Task, error)
+	GetTasks(ListID string) ([]entity.Task, error)
+	GetTask(ListID, TaskID string) ([]entity.Task, error)
+	AddTask(ListID string, task *entity.Task) (*entity.Task, error)
+	UpdateTask(ListID, TaskID string, task *entity.Task) (*entity.Task, error)
 	DestroyTask(Name string)
 }
 
@@ -72,20 +72,17 @@ func (*repo) GetLists(list *entity.List) ([]entity.List, error) {
 
 func (*repo) AddList(list *entity.List) (*entity.List, error) {
 	ctx := context.Background()
-	//add ID
-	_, _, err := c.Collection("task").Add(ctx, map[string]interface{}{
-		"ID":   list.ID,
-		"Name": list.Name,
-		"UID":  list.UID,
-	})
+	list.ID = int64(rand.Intn(10000))
+	_, _, err := c.Collection("lists").Add(ctx, list)
 	if err != nil {
 		log.Fatalf("Failed add list: %v", err)
 	}
 	return list, nil
 }
 
-func (*repo) GetTasks(ListID int) ([]entity.Task, error) {
+func (*repo) GetTasks(ListID string) ([]entity.Task, error) {
 	ctx := context.Background()
+	fmt.Printf(ListID)
 	iter := c.Collection("task").Where("ListID", "==", ListID).Documents(ctx)
 	for {
 		doc, err := iter.Next()
@@ -96,10 +93,10 @@ func (*repo) GetTasks(ListID int) ([]entity.Task, error) {
 			log.Fatalf("Failed to iterate: %v", err)
 		}
 		task := entity.Task{
-			ID:     doc.Data()["ID"].(int),
-			UID:    doc.Data()["UID"].(int64),
+			ID:     doc.Data()["ID"].(string),
+			ListID: doc.Data()["ListID"].(string),
+			UID:    doc.Data()["UID"].(string),
 			Name:   doc.Data()["Name"].(string),
-			ListID: doc.Data()["ListID"].(int),
 		}
 		tasks = append(tasks, task)
 
@@ -107,7 +104,7 @@ func (*repo) GetTasks(ListID int) ([]entity.Task, error) {
 	return tasks, nil
 }
 
-func (*repo) GetTask(ListID, TaskID int) ([]entity.Task, error) {
+func (*repo) GetTask(ListID, TaskID string) ([]entity.Task, error) {
 	ctx := context.Background()
 	iter := c.Collection("task").Where("ListID", "==", ListID).Where("ID", "==", TaskID).Documents(ctx)
 	for {
@@ -119,10 +116,10 @@ func (*repo) GetTask(ListID, TaskID int) ([]entity.Task, error) {
 			log.Fatalf("Failed to iterate: %v", err)
 		}
 		task := entity.Task{
-			ID:     doc.Data()["ID"].(int),
-			UID:    doc.Data()["UID"].(int64),
+			ID:     doc.Data()["ID"].(string),
+			ListID: doc.Data()["ListID"].(string),
+			UID:    doc.Data()["UID"].(string),
 			Name:   doc.Data()["Name"].(string),
-			ListID: doc.Data()["ListID"].(int),
 		}
 		tasks = append(tasks, task)
 
@@ -130,11 +127,11 @@ func (*repo) GetTask(ListID, TaskID int) ([]entity.Task, error) {
 	return tasks, nil
 }
 
-func (*repo) AddTask(ListID int, task *entity.Task) (*entity.Task, error) {
+func (*repo) AddTask(ListID string, task *entity.Task) (*entity.Task, error) {
 	ctx := context.Background()
-	task.ID = rand.Intn(10000)
+	// task.ID = strconv.FormatInt(0)
 	task.ListID = ListID
-	Name := strconv.Itoa(task.ID) + strconv.Itoa(task.ListID)
+	Name := task.ID + task.ListID
 	_, err := c.Collection("task").Doc(Name).Set(ctx, task)
 	if err != nil {
 		log.Fatalf("Failed add task: %v", err)
@@ -142,11 +139,11 @@ func (*repo) AddTask(ListID int, task *entity.Task) (*entity.Task, error) {
 	return task, nil
 }
 
-func (*repo) UpdateTask(TaskID, ListID int, task *entity.Task) (*entity.Task, error) {
+func (*repo) UpdateTask(TaskID, ListID string, task *entity.Task) (*entity.Task, error) {
 	ctx := context.Background()
 	task.ID = TaskID
 	task.ListID = ListID
-	Name := strconv.Itoa(task.ListID) + strconv.Itoa(task.ID)
+	Name := task.ID + task.ListID
 	_, err := c.Collection("task").Doc(Name).Set(ctx, task)
 	if err != nil {
 		log.Fatalf("Failed adding alovelace: %v", err)
