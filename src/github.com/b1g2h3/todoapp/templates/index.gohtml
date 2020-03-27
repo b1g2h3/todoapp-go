@@ -142,6 +142,51 @@
         }
     }
 
+    function selectAllUpdates(){
+      const btnsUpdate = document.querySelectorAll(".task-update")
+        for (const btnUpdate of btnsUpdate) {
+          btnUpdate.addEventListener('click', updateTask.bind(this, btnUpdate.id), false)
+        }
+    }
+
+    function selectAllDeleted(){
+      const btnsDeleted = document.querySelectorAll(".task-delete")
+        for (const btnDel of btnsDeleted) {
+          btnDel.addEventListener('click', deleteTask.bind(this, btnDel.id), false)
+        }
+    }
+
+    function updateTask(id) {
+      console.log(id)
+    }
+
+    function deleteTask(id) {
+      let IDS = JSON.parse("[" + id + "]");
+      if(confirm('Odstranit?')) {
+        let url = `http://localhost:8090/lists/${IDS[0]}/tasks/${IDS[1]}`
+          const task = { 
+            ID: IDS[1],
+            ListID: IDS[0],
+          }
+         fetch( url, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(task),
+          })
+          .then(response => {
+            return response.json();
+          })
+          .then((data) => {
+            console.log(data)
+          })
+          .catch((error) => {
+            console.error('Error:', error);
+          });
+          }
+      }
+
     function addList() {
        firebase.auth().onAuthStateChanged(function(user) {
          if (user) { 
@@ -178,6 +223,38 @@
         }
        })
     }
+    function addTask(ListID){
+     firebase.auth().onAuthStateChanged(function(user) {
+         if (user) { 
+          var Name = document.getElementById('NewTask').value;
+          if(Name){
+            let url = `http://localhost:8090/lists/${ListID}/tasks`
+            const task = { 
+              Name: Name,
+              UID: user.uid ,
+              ListID: ListID,
+            }
+          fetch( url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(task),
+          })
+          .then(response => {
+            return response.json();
+          })
+          .then((data) => {
+            console.log(data)
+          })
+          .catch((error) => {
+            console.error('Error:', error);
+          });
+          }
+        }
+       })
+    }
+
     function fetchTasks(id){
       let url = 'http://localhost:8090/lists/'+id+'/tasks'
       console.log(url)
@@ -191,7 +268,35 @@
             return response.json();
           })
           .then((data) => {
-            console.log(data)
+            let tasks = document.getElementById("tasks");
+            let input = document.createElement("input")
+            input.setAttribute("id", "NewTask")
+            input.setAttribute("placeholder", "Přidat task")
+            let btnCreate = document.createElement("button")
+            btnCreate.setAttribute("class", "addTask pl-2 font-bold")
+            btnCreate.innerHTML = 'Přidat task'
+            btnCreate.addEventListener('click', addTask.bind(this, data[0]["ListID"]), false)
+            tasks.appendChild(input);
+            tasks.appendChild(btnCreate);
+            for (i = "0"; i < data.length; i++) {
+              let task = document.createElement("div");
+              task.setAttribute("id", data[i]["ListID"]+','+data[i]["ID"])
+              task.setAttribute("class", "task font-bold")
+              task.innerHTML = data[i]["Name"]
+              let btnUpdate = document.createElement("button")
+              btnUpdate.setAttribute("id", data[i]["ListID"]+','+data[i]["ID"])
+              btnUpdate.setAttribute("class", "task-update text-green-400 font-bold pl-2")
+              btnUpdate.innerHTML = "Upravit"
+              let btnDeleted = document.createElement("button")
+              btnDeleted.setAttribute("id", data[i]["ListID"]+','+data[i]["ID"])
+              btnDeleted.setAttribute("class", "task-delete text-red-400 font-bold pl-2")
+              btnDeleted.innerHTML = "Smazat"
+              task.appendChild(btnUpdate)
+              task.appendChild(btnDeleted)
+              tasks.appendChild(task);
+            } 
+            selectAllUpdates()
+            selectAllDeleted()
           })
           .catch((error) => {
             console.error('Error:', error);
@@ -266,9 +371,9 @@
         <input class="mdl-textfield__input w-1/2" style="display:inline;width:auto;" type="text" id="NewList" name="NewList" placeholder="Přidejte nový list"/>
         <button class="mdl-button mdl-js-button mdl-button--raised w-1/2" id="addList" name="create-list">Přidat list</button>
          &nbsp;&nbsp;&nbsp;
-      <div id="lists">
-      </div>
       <div id="tasks">
+      </div>
+      <div id="lists">
       </div>
       </div>
 

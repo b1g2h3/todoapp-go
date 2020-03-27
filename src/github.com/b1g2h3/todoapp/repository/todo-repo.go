@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"math/rand"
 
@@ -82,7 +81,6 @@ func (*repo) AddList(list *entity.List) (*entity.List, error) {
 
 func (*repo) GetTasks(ListID string) ([]entity.Task, error) {
 	ctx := context.Background()
-	fmt.Printf(ListID)
 	iter := c.Collection("task").Where("ListID", "==", ListID).Documents(ctx)
 	for {
 		doc, err := iter.Next()
@@ -129,7 +127,7 @@ func (*repo) GetTask(ListID, TaskID string) ([]entity.Task, error) {
 
 func (*repo) AddTask(ListID string, task *entity.Task) (*entity.Task, error) {
 	ctx := context.Background()
-	// task.ID = strconv.FormatInt(0)
+	// list.ID = string(rand.Intn(10000)) addID
 	task.ListID = ListID
 	Name := task.ID + task.ListID
 	_, err := c.Collection("task").Doc(Name).Set(ctx, task)
