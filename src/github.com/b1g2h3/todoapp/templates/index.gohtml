@@ -110,10 +110,7 @@
       // Listening for auth state changes.
       // [START authstatelistener]
       firebase.auth().onAuthStateChanged(function(user) {
-        if (user) {
-        firebase.auth().currentUser.getIdToken(/* forceRefresh */ true).then(function(idToken) {
-           document.cookie=`access_token=${idToken}`;
-        })
+        if (user) {          
           // User is signed in.
           var displayName = user.displayName;
           var email = user.email;
@@ -121,6 +118,21 @@
           var isAnonymous = user.isAnonymous;
           var uid = user.uid;
           var providerData = user.providerData;
+          const data = { UID: uid };
+          fetch('http://localhost:8080/lists', {
+            method: 'POST', // or 'PUT'
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+          })
+          .then((response) => response.json())
+          .then((data) => {
+            console.log('Success:', data);
+          })
+          .catch((error) => {
+            console.error('Error:', error);
+          });
           // [START_EXCLUDE]
           document.getElementById('quickstart-sign-in').textContent = 'Odhlásit se';
           // [END_EXCLUDE]
@@ -170,7 +182,6 @@
           &nbsp;&nbsp;&nbsp;
           <button class="mdl-button mdl-js-button mdl-button--raised" id="quickstart-password-reset" name="verify-email">Zapomněli jste heslo?</button>
             &nbsp;&nbsp;&nbsp;
-          <a href="/login" class="mdl-button mdl-js-button mdl-button--raised" id="quickstart-password-reset" name="verify-email">Přihlásit se s Google účtem</a>
         </div>
       </div>
 
